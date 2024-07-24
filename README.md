@@ -1,1 +1,2 @@
 # Greeting-Telegram-Bot
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=denpoo1_Greeting-Telegram-Bot&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=denpoo1_Greeting-Telegram-Bot)

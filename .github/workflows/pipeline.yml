@@ -1,0 +1,153 @@
+name: Build, Test, and Deploy to CloudRun
+on:
+  push:
+    branches:
+      - master
+      - development
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/development'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Build with Maven
+        run: mvn -B clean install -DskipTests
+
+  tests:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/development'
+    needs: [ build ]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Run Tests with Maven
+        run: mvn test
+
+  sonarqube-analyze:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/development'
+    needs: [ tests ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: 17
+          distribution: 'zulu'
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=denpoo1_Atipera-Intership-Task
+
+  build_and_deploy_container_to_azure_registry:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    needs: [ sonarqube-analyze ]
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Build Docker image and Push
+        run: |
+          mvn compile jib:build \
+            -Djib.to.image=intership.azurecr.io/intership-service:${{ github.sha }} \
+            -Djib.to.auth.username=${{ secrets.DOCKER_USERNAME }} \
+            -Djib.to.auth.password=${{ secrets.DOCKER_PASSWORD }}
+
+  deploy_container_to_azure_aci:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    needs: [ build_and_deploy_container_to_azure_registry ]
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
+
+      - name: Azure CLI script
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az container create \
+              --resource-group intership-task \
+              --name intership-service \
+              --image intership.azurecr.io/intership-service:ec244710b4d50979b723bc3ce95e370f5b290e39 \
+              --ports ${{ vars.SERVER_PORT }} \
+              --environment-variables \
+                  AUTHORIZATION_TOKEN=${{ secrets.AUTHORIZATION_TOKEN }} \
+                  DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
+                  DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }} \
+                  DATABASE_URL=${{ secrets.DATABASE_URL }} \
+                  SPRING_APPLICATION_NAME=${{ vars.SPRING_APPLICATION_NAME }} \
+                  SERVER_PORT=${{ vars.SERVER_PORT }} \
+              --ip-address Public \
+              --registry-username ${{ secrets.DOCKER_USERNAME }} \
+              --registry-password ${{ secrets.DOCKER_PASSWORD }}
+  
+
+
