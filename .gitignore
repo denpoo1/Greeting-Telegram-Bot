@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+!/ai-platform-gcp-key.json
+!/src/main/resources/google-oauth2.json

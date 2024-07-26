@@ -1,0 +1,4 @@
+1. get access to vertex ai and set up langchain framework done
+2. get access to goole calendar and write auth logic
+3. get access to brevo api and write main send logic with auth method done
+4. set up access cloud run with gitlab ci/cd

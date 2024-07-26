@@ -25,40 +25,7 @@ public class TelegramEventHandler extends TelegramLongPollingBot {
         public void onUpdateReceived(Update update) {
 
                 if (update.hasMessage() && update.getMessage().hasText()) {
-//                        String senderEmail = "den.dyrbalov25@gmail.com";
-//                        String recipientEmail = "den.dyrbalov25@gmail.com";
-//                        String senderName = "Denys";
-//                        Long templateId = 4L;
-//                        Object params = new GreetingParams(
-//                                "Dear Dania",
-//                                "Happy Bithday",
-//                                "You are cool",
-//                                "Best Regards",
-//                                "Denys");
-//
-//
-//                        TransactionalEmailsApi apiInstance = new TransactionalEmailsApi();
-//                        SendSmtpEmail sendSmtpEmail = new SendSmtpEmail(); // SendSmtpEmail | Values to send a transactional email
-//                        sendSmtpEmail.setTemplateId(templateId);
-//                        sendSmtpEmail.setParams(params);
-//                        sendSmtpEmail.setSender(new SendSmtpEmailSender().email(senderEmail).name(senderName));
-//                        sendSmtpEmail.setTo(List.of(new SendSmtpEmailTo().email(recipientEmail)));
-//                        try {
-//                                CreateSmtpEmail result = apiInstance.sendTransacEmail(sendSmtpEmail);
-//                                System.out.println(result);
-//                        } catch (ApiException e) {
-//                                System.err.println("Exception when calling TransactionalEmailsApi#sendTransacEmail");
-//                                e.printStackTrace();
-//                        }
-//            long chatId = update.getMessage().getChatId();
-//            SendMessage message = new SendMessage();
-//            message.setChatId(chatId);
-//            message.setText(model.generate(update.getMessage().getText()));
-//            try {
-//                execute(message);
-//            } catch (TelegramApiException e) {
-//                throw new RuntimeException(e);
-//            }
+
                 }
         }
 
