@@ -75,7 +75,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=denpoo1_Atipera-Intership-Task
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=denpoo1_Greeting-Telegram-Bot
 
   build_and_deploy_container_to_azure_registry:
     runs-on: ubuntu-latest
@@ -105,7 +105,7 @@ jobs:
       - name: Build Docker image and Push
         run: |
           mvn compile jib:build \
-            -Djib.to.image=intership.azurecr.io/intership-service:${{ github.sha }} \
+            -Djib.to.image=intership.azurecr.io/greeting-telegram-bot:${{ github.sha }} \
             -Djib.to.auth.username=${{ secrets.DOCKER_USERNAME }} \
             -Djib.to.auth.password=${{ secrets.DOCKER_PASSWORD }}
 
@@ -134,9 +134,9 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az container create \
-              --resource-group intership-task \
-              --name intership-service \
-              --image intership.azurecr.io/intership-service:ec244710b4d50979b723bc3ce95e370f5b290e39 \
+              --resource-group greeting-telegram-bot \
+              --name greeting-telegram-bot \
+              --image intership.azurecr.io/greeting-telegram-bot:ec244710b4d50979b723bc3ce95e370f5b290e39 \
               --ports ${{ vars.SERVER_PORT }} \
               --environment-variables \
                   AUTHORIZATION_TOKEN=${{ secrets.AUTHORIZATION_TOKEN }} \
